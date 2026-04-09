@@ -74,6 +74,14 @@ clean_data <- gas_price_df %>%
 
 # Preview the cleaned and aligned data
 head(clean_data)
+
+# ==========================================
+# 3. Export Processed Data
+# ==========================================
+# We save the cleaned and merged dataset for reproducibility and team sharing.
+# The file is saved in CSV format within the 'Processed_Data' folder.
+
+write_csv(clean_data, "Processed_Data/cleaned_data.csv")
 ```
 
 ## 3. Exploratory Data Analysis (EDA)
