@@ -57,20 +57,26 @@ shock_ir2_ts <- ts(oil_price$shock_ir2, frequency = 52)
 
 ```{r}
 #Initial plot
-plot <-ggplot(oil_price, aes(x = date, y = gas_price)) +
-  geom_line() +
+plot <- ggplot(oil_price, aes(x = date, y = gas_price)) +
+  geom_line(color = "black") +
+
   # Russia-Ukraine
   annotate("rect", xmin = ru_start, xmax = ru_end,
-           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+           ymin = -Inf, ymax = Inf,
+           fill = "red", alpha = 0.15) +
 
   # Iran1
   annotate("rect", xmin = ir1_start, xmax = ir1_end,
-           ymin = -Inf, ymax = Inf, alpha = 0.1) +
-  # Iran2
-  annotate("rect", xmin = ir2_start, xmax = ir2_end,
-           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+           ymin = -Inf, ymax = Inf,
+           fill = "blue", alpha = 0.15) +
 
-  labs(title = "Weekly U.S. Gasoline Prices with Geopolitical Shock Dates") +
+  # Iran2
+  #annotate("rect", xmin = ir2_start, xmax = ir2_end,
+           #ymin = -Inf, ymax = Inf,
+           #fill = "green", alpha = 0.15) +
+
+  labs(title = "Weekly U.S. Gasoline Prices with Geopolitical Shock Periods",
+       x = "Date", y = "Gasoline Price") +
   theme_minimal()
 
 print(plot)
@@ -87,7 +93,7 @@ plot(decomp)
 
 ```{r}
 # Original series
-plot(gas_ts, main = "Gas Price Time Series")
+plot(gas_ts, main = "Gasoline Price Time Series")
 
 # ACF / PACF
 Acf(gas_ts, main = "ACF - Original Series")
@@ -101,9 +107,9 @@ print(adf_original)
 ```{r}
 gas_diff <- diff(gas_ts)
 
-plot(gas_diff, main = "Diff Gas Price Time Series")
-Acf(gas_diff, main = "ACF of Diff Gas Price")
-Pacf(gas_diff, main = "PACF of Diff Gas Price")
+plot(gas_diff, main = "Diff Gasoline Price Time Series")
+Acf(gas_diff, main = "ACF of Diff Gasoline Price")
+Pacf(gas_diff, main = "PACF of Diff Gasoline Price")
 
 adf.test(na.omit(gas_diff))
 ```
