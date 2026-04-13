@@ -67,8 +67,11 @@ plot <-ggplot(oil_price, aes(x = date, y = gas_price)) +
   annotate("rect", xmin = ru_start, xmax = ru_end,
            ymin = -Inf, ymax = Inf, alpha = 0.1) +
 
-  # Iran
-  annotate("rect", xmin = ir_start, xmax = ir_end,
+  # Iran1
+  annotate("rect", xmin = ir1_start, xmax = ir1_end,
+           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+  # Iran2
+  annotate("rect", xmin = ir2_start, xmax = ir2_end,
            ymin = -Inf, ymax = Inf, alpha = 0.1) +
 
   # Venezuela
