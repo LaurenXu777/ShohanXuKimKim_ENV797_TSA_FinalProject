@@ -1,0 +1,209 @@
+---
+title: "TSA_FinalProject"
+output: html_document
+---
+
+```{r}
+packages <- c("tidyverse", "lubridate", "forecast", "readr", "readxl")
+to_install <- packages[!packages %in% installed.packages()[, "Package"]]
+if (length(to_install) > 0) install.packages(to_install)
+
+library(tidyverse)
+library(lubridate)
+library(forecast)
+library(ggplot2)
+library(Kendall)
+library(tseries)
+library(outliers)
+```
+
+```{r}
+#Importing data
+oil_price <- read.csv(file="../Processed_Data/cleaned_data.csv")
+
+# Make sure date is Date type
+oil_price <- oil_price %>%
+  mutate(date = as.Date(date))%>%
+  arrange(date)
+
+#Define shock periods
+ru_start <- as.Date("2022-02-24")
+ru_end   <- as.Date("2023-06-30")
+
+ir1_start <- as.Date("2025-06-13")
+ir1_end   <- as.Date("2025-07-13")
+
+ir2_start <- as.Date("2026-02-28")
+ir2_end   <- as.Date("2026-04-06")
+
+ve_start <- as.Date("2026-01-03")
+ve_end   <- as.Date("2026-02-03")
+
+#Make shock periods as dummy variable
+oil_price <- oil_price %>%
+  mutate(
+    shock_ru = if_else(date >= ru_start & date <= ru_end, 1, 0),
+    shock_ir1 = if_else(date >= ir1_start & date <= ir1_end, 1, 0),
+    shock_ir2 = if_else(date >= ir2_start & date <= ir2_end, 1, 0),
+    shock_ve = if_else(date >= ve_start & date <= ve_end, 1, 0)
+  )
+
+# Transforming data into time series object
+gas_ts   <- ts(oil_price$gas_price, frequency = 52)
+stock_ts <- ts(oil_price$gas_stocks, frequency = 52)
+
+shock_ru_ts  <- ts(oil_price$shock_ru, frequency = 52)
+shock_ir1_ts <- ts(oil_price$shock_ir1, frequency = 52)
+shock_ir2_ts <- ts(oil_price$shock_ir2, frequency = 52)
+shock_ve_ts  <- ts(oil_price$shock_ve, frequency = 52)
+
+```
+
+```{r}
+#Initial plot
+plot <-ggplot(oil_price, aes(x = date, y = gas_price)) +
+  geom_line() +
+  # Russia-Ukraine
+  annotate("rect", xmin = ru_start, xmax = ru_end,
+           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+
+  # Iran
+  annotate("rect", xmin = ir_start, xmax = ir_end,
+           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+
+  # Venezuela
+  annotate("rect", xmin = ve_start, xmax = ve_end,
+           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+
+  labs(title = "Weekly U.S. Gasoline Prices with Geopolitical Shock Dates") +
+  theme_minimal()
+
+print(plot)
+
+```
+```{r}
+#Decomposition
+gas_ts <- ts(oil_price$gas_price, frequency = 52)
+
+decomp <- decompose(gas_ts)
+plot(decomp)
+```
+```{r}
+# Original series
+plot(gas_ts, main = "Gas Price Time Series")
+
+# ACF / PACF
+Acf(gas_ts, main = "ACF - Original Series")
+Pacf(gas_ts, main = "PACF - Original Series")
+
+# ADF test
+adf_original <- adf.test(gas_ts)
+print(adf_original)
+```
+```{r}
+gas_diff <- diff(gas_ts)
+
+plot(gas_diff, main = "Diff Gas Price Time Series")
+Acf(gas_diff, main = "ACF of Diff Gas Price")
+Pacf(gas_diff, main = "PACF of Diff Gas Price")
+
+adf.test(na.omit(gas_diff))
+```
+```{r}
+# Create combined shock variable
+oil_price <- oil_price %>%
+  mutate(
+    shock_all = if_else(
+      shock_ru == 1 | shock_ir1 == 1 | shock_ir2 == 1 | shock_ve == 1,
+      1, 0
+    )
+  )
+
+#Train/Test split
+h <- 20  
+
+train <- head(gas_ts, length(gas_ts) - h)
+test  <- tail(gas_ts, h)
+
+train_x <- head(stock_ts, length(train))
+test_x  <- tail(stock_ts, h)
+
+train_shock_all <- head(oil_price$shock_all, length(train))
+test_shock_all  <- tail(oil_price$shock_all, h)
+
+#ARIMA: Baseline model
+fit_arima <- auto.arima(train)
+summary(fit_arima)
+
+fc_arima <- forecast(fit_arima, h = h)
+plot(fc_arima)
+
+#Integrate external factor (oil stock)
+train_x <- head(stock_ts, length(train))
+test_x  <- tail(stock_ts, h)
+
+#fit_arimax <- auto.arima(train, xreg = train_x)
+#summary(fit_arimax)
+
+#fc_arimax <- forecast(fit_arimax, xreg = test_x)
+#plot(fc_arimax)
+
+#Integrate external factor (shock periods)
+train_x_all <- as.matrix(cbind(
+  gas_stocks = train_x,
+  shock_all = train_shock_all
+))
+
+test_x_all <- as.matrix(cbind(
+  gas_stocks = test_x,
+  shock_all = test_shock_all
+))
+
+# Final model
+fit_arimax_final <- auto.arima(train, xreg = train_x_all)
+summary(fit_arimax_final)
+
+fc_arimax_final <- forecast(fit_arimax_final, xreg = test_x_all)
+plot(fc_arimax_final)
+```
+```{r}
+#Evaluate models (ARIMA vs ARIMAX(stocks + shock))
+accuracy(fc_arima, test)
+accuracy(fc_arimax_final, test)
+
+#Make comparison result table
+acc_arima  <- accuracy(fc_arima, test)
+acc_arimax <- accuracy(fc_arimax_final, test)
+
+results <- data.frame(
+  Model = c("ARIMA", "ARIMAX (stocks + shock)"),
+  RMSE = c(acc_arima[2,"RMSE"], acc_arimax[2,"RMSE"]),
+  MAE  = c(acc_arima[2,"MAE"],  acc_arimax[2,"MAE"]),
+  MAPE = c(acc_arima[2,"MAPE"], acc_arimax[2,"MAPE"])
+)
+
+print(results)
+
+#Plot 
+autoplot(test, series = "Actual") +
+  autolayer(fc_arima$mean, series = "ARIMA") +
+  autolayer(fc_arimax_final$mean, series = "ARIMAX") +
+  labs(title = "Model Comparison: ARIMA vs ARIMAX(stocks + shock)",
+       y = "Gas Price") +
+  theme_minimal()
+```
+
+The two models show comparable performance, with ARIMA slightly better in RMSE, while ARIMAX improves interpretability and slightly reduces MAE and MAPE.
+
+
+
+
+
+
+
+
+
+
+
+
+
