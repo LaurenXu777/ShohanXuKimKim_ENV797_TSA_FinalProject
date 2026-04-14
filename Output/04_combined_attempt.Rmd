@@ -758,14 +758,11 @@ calibration_tbl %>%
 
 Our event study reveals a critical finding: **no single model dominates across all shock types.** Predictive power shifted significantly depending on the nature, duration, and intensity of each geopolitical event.
 
-**Shock 1 — Russia-Ukraine (~70-week structural break):**
-For massive, sustained supply disruptions involving global commodity repricing, the **ARIMA-Boost hybrid** (ARIMA + XGBoost errors) performed best. The ARIMA component captures the underlying statistical structure, while the XGBoost layer models nonlinear residuals driven by the prolonged geopolitical regime shift. This cross-validates the traditional ARIMAX result from Section 4.5 (ARIMA(2,0,1) with regressors), where incorporating external shocks improved training fit even in the classical framework.
+**Novel, Complex Shock: Shock 1 (Russia-Ukraine) and Shock 3 (Iran Escalation) :**
+For novel and complex shock such as Russia-Ukraine and on-going Iran war, the **NNAR (Neural Network Auto-Regression)** model emerged as the top performer. The events posed the greatest forecasting challenge, as the models had limited prior data on this new volatility regime. In this case, the highly complex, non-linear price fluctuations caused by sudden geopolitical escalation were best captured by the neural network's hidden layers.
 
-**Shock 2 — Israel-Iran (4-week risk premium spike):**
+**Short-term Risk Shock: Shock 2 (4 weeks Israel-Iran war):**
 The **ARIMAX** model (Regression with ARIMA errors) led performance, closely followed by NNAR. The conflict functioned primarily as a short-duration risk premium shock: the external regressor framework absorbed the signal without requiring nonlinear residual correction. The traditional ARIMAX in Section 4.5 confirmed the shock dummy coefficient is small (~-0.033), suggesting bounded-window shocks have modest but directionally consistent effects.
-
-**Shock 3 — Iran Escalation Feb 2026 (5-week structural shift):**
-As the most recent shock occurring at the very end of our test period, this event posed the greatest forecasting challenge, as the models had limited prior data on this new volatility regime. The **NNAR (Neural Network Auto-Regression)** model emerged as the top performer (MAE: 0.2030), outperforming the Prophet model (MAE: 0.2647) which remained a strong runner-up due to its flexible changepoint detection. This indicates that the highly complex, non-linear price fluctuations caused by this sudden geopolitical escalation were best captured by the neural network's hidden layers.
 
 **Key takeaway:** Shock-type matters as much as model choice. Long-duration structural breaks favor hybrid ensemble approaches; short-term risk premium spikes favor dynamic regression; novel near-term breaks favor flexible trend models.
 
@@ -781,17 +778,15 @@ This analysis demonstrates that U.S. gasoline prices respond to geopolitical sho
 
 2. **Multivariate models** incorporating WTI crude oil prices, gasoline stocks, and geopolitical shock dummies substantially outperform univariate models. The naive baseline (Test RMSE ≈ 0.42) is reduced dramatically by even simple ARIMA (≈0.05 training), confirming that external regressors carry meaningful predictive signal.
 
-3. For **sustained structural breaks** (Russia-Ukraine), the ARIMA-Boost hybrid is most robust — it combines ARIMA structure with machine learning residual correction.
+3. For **novel, complex shocks** (Russia-Ukraine, Iran Escalation 2026), NNAR's ability to map chaotic, short-term dependencies without being strictly bound by historical linear constraints provides a marginal advantage, though all models face elevated uncertainty when events are recent and training data is limited.
 
 4. For **short-term risk premium events** (Israel-Iran June 2025), ARIMAX with bounded shock dummies captures the signal efficiently and is more interpretable for policy communication.
 
-5. For **novel near-term shocks** (Iran Escalation 2026), NNAR's ability to map chaotic, short-term dependencies without being strictly bound by historical linear constraints provides a marginal advantage, though all models face elevated uncertainty when events are recent and training data is limited.
 
 **Policy recommendation:**
 We recommend a **dynamic, shock-type-matched forecasting framework**:
-- Deploy **ARIMA-Boost** for long-horizon monitoring during sustained geopolitical disruptions.
-- Deploy **ARIMAX** for near-term, event-specific windows where the shock is clearly bounded.
 - Deploy **NNAR** for real-time monitoring of emerging events where historical analogues are limited.
+- Deploy **ARIMAX** for near-term, event-specific windows where the shock is clearly bounded.
 
 All models should be retrained weekly as new EIA data becomes available, with shock dummies activated the week an event is confirmed and deactivated when market prices stabilize.
 
