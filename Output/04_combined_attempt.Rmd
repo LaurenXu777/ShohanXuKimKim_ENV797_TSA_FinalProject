@@ -9,6 +9,9 @@ output:
     toc_float: true
     theme: flatly
     code_folding: show
+  pdf_document:
+    toc: true
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
@@ -676,6 +679,14 @@ calibration_tbl %>%
     .legend_max_width = 25
   )
 ```
+
+When interpreting the results for Shock 1, the Russia-Ukraine crisis, we discovered a highly compelling insight. Because this event occurred during our training period, the metrics you see here reflect in-sample fit rather than out-of-sample predictive power.
+
+Quantitatively, based on the RMSE metric, **the ARIMA-Boost model** ranked first by aggressively minimizing mathematical residuals. However, a visual inspection of the plot tells a different story. While ARIMA-Boost mathematically optimized the point-by-point error, it failed to naturally replicate the non-linear waves of actual price movements.
+
+Instead, the runner-up, **the NNAR model**, proved far superior visually. Through its hidden layers, it successfully captured the actual non-linear spikes and underlying trends, tracking the price curve much more realistically.
+
+This highlights a critical lesson for our analysis: relying solely on aggregate error metrics like RMSE can be misleading. Rigorous visual validation is essential to truly assess a model's practical performance.
 
 ### 6.3 Shock 2: Israel-Iran Conflict (Jun–Jul 2025)
 
