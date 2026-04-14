@@ -354,7 +354,7 @@ test_xreg  <- as.matrix(cbind(gas_stocks = test_x,  shock_all = test_shk))
 fit_arimax <- auto.arima(train, xreg = train_xreg)
 print(summary(fit_arimax))
 fc_arimax  <- forecast(fit_arimax, xreg = test_xreg)
-acc_arimax <- accuracy(fc_arimax, test)
+acc_arimax <- forecast::accuracy(fc_arimax, test)
 cat("ARIMAX — Test RMSE:", round(acc_arimax["Test set", "RMSE"], 4), "\n")
 
 # ---- Summary table ----
